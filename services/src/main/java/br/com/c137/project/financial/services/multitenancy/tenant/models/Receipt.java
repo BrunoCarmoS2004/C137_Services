@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static br.com.c137.project.financial.services.utils.ServiceUtils.getUserIdFromToken;
+
 @Entity
 @Table(name = "receipts")
 @Data
@@ -27,17 +29,18 @@ public class Receipt {
     @Column(nullable = false)
     private String description;
 
-    @ManyToOne()
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @Column(name = "category_id")
+    private UUID categoryId;
+
+    @Column(name = "category_name")
+    private String categoryName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionStatus status;
 
-    @ManyToOne
-    @JoinColumn(name = "bank_account_id")
-    private BankAccount bankAccount;
+    @Column(name = "bank_account_id")
+    private UUID bankAccountId;
 
     @Column(name = "bank_account_name")
     private String bankAccountName;
@@ -98,13 +101,6 @@ public class Receipt {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.entityStatus = EntityStatus.ACTIVE;
-    }
-
-    public UUID getBankAccountId() {
-        return this.bankAccount != null ? this.bankAccount.getId() : null;
-    }
-
-    public String getBankAccountName() {
-        return this.bankAccount != null ? this.bankAccount.getName() : null;
+        this.createdBy = getUserIdFromToken();
     }
 }

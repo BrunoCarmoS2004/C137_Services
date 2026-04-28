@@ -1,10 +1,10 @@
 package br.com.c137.project.financial.services.controllers;
 
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.sale.SaleGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.sale.SalePostDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.sales.SalePutDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.PaymentGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.PaymentPostDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.PaymentPutDTO;
 import br.com.c137.project.financial.services.responses.ResponsePayload;
-import br.com.c137.project.financial.services.services.SaleService;
+import br.com.c137.project.financial.services.services.PaymentService;
 import br.com.c137.project.financial.services.utils.MessageUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,62 +21,62 @@ import java.util.UUID;
 import static br.com.c137.project.financial.services.utils.ServiceUtils.createResponse;
 
 @RestController
-@RequestMapping("/sale")
-public class SaleController {
+@RequestMapping("/payment")
+public class PaymentController {
     @Autowired
-    private SaleService saleService;
+    private PaymentService paymentService;
 
     @Autowired
     private MessageUtils messageUtils;
 
     @GetMapping
-    public ResponseEntity<PagedModel<SaleGetDTO>> getAll(@PageableDefault(sort = {"createdAt"}, direction = Sort.Direction.DESC)
+    public ResponseEntity<PagedModel<PaymentGetDTO>> getAll(@PageableDefault(sort = {"createdAt"}, direction = Sort.Direction.DESC)
                                                          Pageable pageable) {
-        return ResponseEntity.ok(saleService.getAll(pageable));
+        return ResponseEntity.ok(paymentService.getAll(pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponsePayload<SaleGetDTO>> getSaleById(@PathVariable UUID id) {
-        SaleGetDTO saleGetDTO = saleService.getSaleById(id);
+    public ResponseEntity<ResponsePayload<PaymentGetDTO>> getPaymentById(@PathVariable UUID id) {
+        PaymentGetDTO paymentGetDTO = paymentService.getPaymentById(id);
         return createResponse(
                 HttpStatus.OK,
-                saleGetDTO.id(),
-                saleGetDTO,
-                messageUtils.getMessage("sale.found")
+                paymentGetDTO.id(),
+                paymentGetDTO,
+                messageUtils.getMessage("payment.found")
         );
     }
 
     @PostMapping
-    public ResponseEntity<ResponsePayload<SaleGetDTO>> postSale(@Valid @RequestBody SalePostDTO salePostDTO) {
-        SaleGetDTO saleGetDTO = saleService.postSale(salePostDTO);
+    public ResponseEntity<ResponsePayload<PaymentGetDTO>> postPayment(@Valid @RequestBody PaymentPostDTO paymentPostDTO) {
+        PaymentGetDTO paymentGetDTO = paymentService.postPayment(paymentPostDTO);
         return createResponse(
                 HttpStatus.CREATED,
-                saleGetDTO.id(),
-                saleGetDTO,
-                messageUtils.getMessage("sale.created")
+                paymentGetDTO.id(),
+                paymentGetDTO,
+                messageUtils.getMessage("payment.created")
         );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponsePayload<SaleGetDTO>> putSale(@PathVariable UUID id, @Valid @RequestBody SalePutDTO salePutDTO) {
-        SaleGetDTO saleGetDTO = saleService.putSale(id, salePutDTO);
+    public ResponseEntity<ResponsePayload<PaymentGetDTO>> putPayment(@PathVariable UUID id, @Valid @RequestBody PaymentPutDTO paymentPutDTO) {
+        PaymentGetDTO paymentGetDTO = paymentService.putPayment(id, paymentPutDTO);
         return createResponse(
                 HttpStatus.OK,
-                saleGetDTO.id(),
-                saleGetDTO,
-                messageUtils.getMessage("sale.updated")
+                paymentGetDTO.id(),
+                paymentGetDTO,
+                messageUtils.getMessage("payment.updated")
         );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSale(@PathVariable UUID id) {
-        saleService.deleteSale(id);
+    public ResponseEntity<Void> deletePayment(@PathVariable UUID id) {
+        paymentService.deletePayment(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> inactiveSale(@PathVariable UUID id) {
-        saleService.inactiveSale(id);
+    public ResponseEntity<Void> inactivePayment(@PathVariable UUID id) {
+        paymentService.inactivePayment(id);
         return ResponseEntity.noContent().build();
     }
 }

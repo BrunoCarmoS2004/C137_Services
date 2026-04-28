@@ -13,7 +13,9 @@ public record ReceiptGetDTO(
 
         String description,
 
-        Category category,
+        UUID categoryId,
+
+        String categoryName,
 
         TransactionStatus status,
 

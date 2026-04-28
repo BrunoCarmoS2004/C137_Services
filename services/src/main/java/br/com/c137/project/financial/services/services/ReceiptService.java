@@ -1,17 +1,17 @@
 package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
-import br.com.c137.project.financial.services.mappers.PaymentMapper;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.payment.PaymentAuxiliary;
+import br.com.c137.project.financial.services.mappers.ReceiptMapper;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.PaymentGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.PaymentPostDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.PaymentPutDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.receipt.ReceiptAuxiliary;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.ReceiptGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.ReceiptPostDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.ReceiptPutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.Payment;
-import br.com.c137.project.financial.services.multitenancy.tenant.repositories.PaymentRepository;
+import br.com.c137.project.financial.services.multitenancy.tenant.models.Receipt;
+import br.com.c137.project.financial.services.multitenancy.tenant.repositories.ReceiptRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
-import br.com.c137.project.financial.services.validations.PaymentValidation;
+import br.com.c137.project.financial.services.validations.ReceiptValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,15 +24,15 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class PaymentService {
+public class ReceiptService {
     @Autowired
-    private PaymentRepository paymentRepository;
+    private ReceiptRepository receiptRepository;
 
     @Autowired
-    private PaymentValidation paymentValidation;
+    private ReceiptValidation receiptValidation;
 
     @Autowired
-    private PaymentMapper paymentMapper;
+    private ReceiptMapper receiptMapper;
 
     @Autowired
     private MessageUtils messageUtils;
@@ -44,97 +44,97 @@ public class PaymentService {
     private CategoryService categoryService;
 
     @Autowired
-    private SupplierService supplierService;
+    private ClientService clientService;
 
-    @Cacheable(value = "payments", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedModel<PaymentGetDTO> getAll(Pageable pageable) {
-        Page<PaymentGetDTO> payments = paymentRepository.findAllBy(pageable, PaymentGetDTO.class);
-        return new PagedModel<>(payments);
+    @Cacheable(value = "receipts", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
+    public PagedModel<ReceiptGetDTO> getAll(Pageable pageable) {
+        Page<ReceiptGetDTO> receipts = receiptRepository.findAllBy(pageable, ReceiptGetDTO.class);
+        return new PagedModel<>(receipts);
     }
 
-    @Cacheable(value = "payment", key = "#id")
-    public PaymentGetDTO getPaymentById(UUID id) {
-        return paymentRepository.findById(id, PaymentGetDTO.class).orElseThrow(
+    @Cacheable(value = "receipt", key = "#id")
+    public ReceiptGetDTO getReceiptById(UUID id) {
+        return receiptRepository.findById(id, ReceiptGetDTO.class).orElseThrow(
                 () -> new NotFoundException(getNotFoundMessage()));
     }
 
-    @CacheEvict(value = "payments", allEntries = true)
-    public PaymentGetDTO postPayment(PaymentPostDTO paymentPostDTO) {
-        PaymentAuxiliary paymentAuxiliary = resolvePaymentDependencies(
-                paymentPostDTO.categoryId(),
-                paymentPostDTO.bankAccountId(),
-                paymentPostDTO.supplierId()
+    @CacheEvict(value = "receipts", allEntries = true)
+    public ReceiptGetDTO postReceipt(ReceiptPostDTO receiptPostDTO) {
+        ReceiptAuxiliary receiptAuxiliary = resolveReceiptDependencies(
+                receiptPostDTO.categoryId(),
+                receiptPostDTO.bankAccountId(),
+                receiptPostDTO.clientId()
         );
-        Payment payment = paymentMapper.postToPayment(paymentPostDTO);
-        return saveAndReturn(payment, paymentAuxiliary);
+        Receipt receipt = receiptMapper.postToReceipt(receiptPostDTO);
+        return saveAndReturn(receipt, receiptAuxiliary);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "payments", allEntries = true),
-            @CacheEvict(value = "payment", key = "#id")
+            @CacheEvict(value = "receipts", allEntries = true),
+            @CacheEvict(value = "receipt", key = "#id")
     })
-    public PaymentGetDTO putPayment(UUID id, PaymentPutDTO paymentPutDTO) {
-        PaymentAuxiliary paymentAuxiliary = resolvePaymentDependencies(
-                paymentPutDTO.categoryId(),
-                paymentPutDTO.bankAccountId(),
-                paymentPutDTO.supplierId()
+    public ReceiptGetDTO putReceipt(UUID id, ReceiptPutDTO receiptPutDTO) {
+        ReceiptAuxiliary receiptAuxiliary = resolveReceiptDependencies(
+                receiptPutDTO.categoryId(),
+                receiptPutDTO.bankAccountId(),
+                receiptPutDTO.clientId()
         );
-        Payment payment = paymentRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
-        payment = paymentMapper.putToPayment(paymentPutDTO, payment);
-        return saveAndReturn(payment, paymentAuxiliary);
+        Receipt receipt = receiptRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
+        receipt = receiptMapper.putToReceipt(receiptPutDTO, receipt);
+        return saveAndReturn(receipt, receiptAuxiliary);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "payments", allEntries = true),
-            @CacheEvict(value = "payment", key = "#id")
+            @CacheEvict(value = "receipts", allEntries = true),
+            @CacheEvict(value = "receipt", key = "#id")
     })
-    public void deletePayment(UUID id) {
-        paymentExistsValidation(id);
+    public void deleteReceipt(UUID id) {
+        receiptExistsValidation(id);
         updateEntityStatus(EntityStatus.DELETED, id);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "payments", allEntries = true),
-            @CacheEvict(value = "payment", key = "#id")
+            @CacheEvict(value = "receipts", allEntries = true),
+            @CacheEvict(value = "receipt", key = "#id")
     })
-    public void inactivePayment(UUID id) {
-        paymentExistsValidation(id);
+    public void inactiveReceipt(UUID id) {
+        receiptExistsValidation(id);
         updateEntityStatus(EntityStatus.INACTIVE, id);
     }
 
-    protected void paymentExistsValidation(UUID id) {
-        paymentValidation.paymentExistsValidation(id);
+    protected void receiptExistsValidation(UUID id) {
+        receiptValidation.receiptExistsValidation(id);
     }
 
 
     protected void updateEntityStatus(EntityStatus entityStatus, UUID id) {
-        paymentRepository.updateEntityStatus(entityStatus, id);
+        receiptRepository.updateEntityStatus(entityStatus, id);
     }
 
     private String getNotFoundMessage() {
-        return messageUtils.getMessage("payment.not-found");
+        return messageUtils.getMessage("receipt.not-found");
     }
 
-    private PaymentAuxiliary resolvePaymentDependencies(
+    private ReceiptAuxiliary resolveReceiptDependencies(
             UUID categoryId,
             UUID bankAccountId,
-            UUID supplierId
+            UUID clientId
     ) {
         //Validations if exists in services
         IdNameEntitiesAuxiliary idNameCategory = categoryService.getIdNameCategory(categoryId);
         IdNameEntitiesAuxiliary idNameBankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
-        IdNameEntitiesAuxiliary idNameSupplier =
-                supplierId != null
-                ? supplierService.getIdNameSupplier(supplierId) : new IdNameEntitiesAuxiliary(null, null);
-        //SUPPLIER, BANK ACCOUNT, CATEGORY
-        return new PaymentAuxiliary(idNameSupplier, idNameBankAccount, idNameCategory);
+        IdNameEntitiesAuxiliary idNameClient = 
+                clientId != null
+                ? clientService.getIdNameClient(clientId) : new IdNameEntitiesAuxiliary(null, null);
+        //CLIENT, BANK ACCOUNT, CATEGORY
+        return new ReceiptAuxiliary(idNameClient, idNameBankAccount, idNameCategory);
     }
 
-    private PaymentGetDTO saveAndReturn(Payment payment, PaymentAuxiliary paymentAuxiliary) {
-        payment.setSupplierName(paymentAuxiliary.supplierInfo().name());
-        payment.setBankAccountName(paymentAuxiliary.bankAccountInfo().name());
-        payment.setCategoryName(paymentAuxiliary.categoryInfo().name());
-        payment = paymentRepository.save(payment);
-        return paymentMapper.paymentToPaymentGetDTO(payment);
+    private ReceiptGetDTO saveAndReturn(Receipt receipt, ReceiptAuxiliary receiptAuxiliary) {
+        receipt.setClientName(receiptAuxiliary.clientInfo().name());
+        receipt.setBankAccountName(receiptAuxiliary.bankAccountInfo().name());
+        receipt.setCategoryName(receiptAuxiliary.categoryInfo().name());
+        receipt = receiptRepository.save(receipt);
+        return receiptMapper.receiptToReceiptGetDTO(receipt);
     }
 }

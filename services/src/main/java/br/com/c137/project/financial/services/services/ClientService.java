@@ -1,6 +1,7 @@
 package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
 import br.com.c137.project.financial.services.multitenancy.tenant.models.basic.Client;
 import br.com.c137.project.financial.services.multitenancy.tenant.repositories.basic.ClientRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
@@ -27,5 +28,13 @@ public class ClientService {
 
     protected Client getClientById(UUID id) {
         return clientRepository.findById(id).orElseThrow(() -> new NotFoundException(messageUtils.getMessage("client.not-exists")));
+    }
+
+    protected IdNameEntitiesAuxiliary getIdNameClient(UUID clientId) {
+        return clientRepository.findById(clientId, IdNameEntitiesAuxiliary.class).orElseThrow(() -> new NotFoundException(messageUtils.getMessage(getNotFoundMessage())));
+    }
+
+    private String getNotFoundMessage() {
+        return messageUtils.getMessage("client.not-found");
     }
 }

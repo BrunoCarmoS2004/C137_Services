@@ -1,7 +1,7 @@
 package br.com.c137.project.financial.services.validations;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
-import br.com.c137.project.financial.services.multitenancy.tenant.repositories.basic.ClientRepository;
+import br.com.c137.project.financial.services.multitenancy.tenant.repositories.basic.SupplierRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -9,17 +9,17 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 @Component
-public class ClientValidation {
+public class SupplierValidation {
     @Autowired
-    private ClientRepository clientRepository;
+    private SupplierRepository supplierRepository;
 
     @Autowired
     private MessageUtils messageUtils;
 
-    public void clientExistsValidation(UUID id){
-        boolean exist = clientRepository.existsById(id);
+    public void supplierExistsValidation(UUID id){
+        boolean exist = supplierRepository.existsById(id);
         if (!exist){
-            throw new NotFoundException(messageUtils.getMessage("client.not-exists"));
+            throw new NotFoundException(messageUtils.getMessage("supplier.not-exists"));
         }
     }
 }

@@ -1,7 +1,9 @@
-package br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries;
+package br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.servicecontract;
+
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
 
 public record ServiceContractAuxiliary(
-        String clientName,
-        String bankAccountName
+        IdNameEntitiesAuxiliary clientInfo,
+        IdNameEntitiesAuxiliary bankAccountInfo
 ) {
 }

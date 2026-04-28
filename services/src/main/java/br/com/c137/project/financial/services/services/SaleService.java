@@ -2,14 +2,13 @@ package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
 import br.com.c137.project.financial.services.mappers.SaleMapper;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.SaleAuxiliary;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.IdNameBankAccountGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.sale.SaleAuxiliary;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.sale.SaleGetDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.sale.SaleItemPostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.sale.SalePostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.sales.SalePutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.basic.Client;
 import br.com.c137.project.financial.services.multitenancy.tenant.models.sale.Sale;
 import br.com.c137.project.financial.services.multitenancy.tenant.repositories.sale.SaleRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
@@ -69,7 +68,7 @@ public class SaleService {
     @CacheEvict(value = "sales", allEntries = true)
     public SaleGetDTO postSale(SalePostDTO salePostDTO) {
         Set<UUID> allItemsIds = salePostDTO.saleItems().stream().map(SaleItemPostDTO::serviceProductId).collect(Collectors.toSet());
-        SaleAuxiliary validations = commonValidations(salePostDTO.clientId(), salePostDTO.bankAccountId(), allItemsIds);
+        SaleAuxiliary validations = resolveSaleDependencies(salePostDTO.clientId(), salePostDTO.bankAccountId(), allItemsIds);
         Sale sale = saleMapper.postToSale(salePostDTO);
         return saveAndReturn(sale, validations);
     }
@@ -81,7 +80,7 @@ public class SaleService {
     public SaleGetDTO putSale(UUID id, SalePutDTO salePutDTO) {
         saleExistsValidation(id);
         Set<UUID> allItemsIds = salePutDTO.saleItems().stream().map(SaleItemPostDTO::serviceProductId).collect(Collectors.toSet());
-        SaleAuxiliary validations = commonValidations(salePutDTO.clientId(), salePutDTO.bankAccountId(), allItemsIds);
+        SaleAuxiliary validations = resolveSaleDependencies(salePutDTO.clientId(), salePutDTO.bankAccountId(), allItemsIds);
         Sale sale = saleRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
         sale = saleMapper.putToSale(salePutDTO, sale);
         return saveAndReturn(sale, validations);
@@ -117,19 +116,17 @@ public class SaleService {
         return messageUtils.getMessage("sale.not-found");
     }
 
-    private SaleAuxiliary commonValidations(UUID clientId, UUID bankAccountId, Set<UUID> itemIds) {
-        clientService.clientExistsValidation(clientId);
-        bankAccountService.bankAccountExistsValidation(bankAccountId);
+    private SaleAuxiliary resolveSaleDependencies(UUID clientId, UUID bankAccountId, Set<UUID> itemIds) {
         serviceProductService.serviceProductExistsByIdsValidation(itemIds);
-
-        Client client = clientService.getClientById(clientId);
-        IdNameBankAccountGetDTO bankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
-        return new SaleAuxiliary(client.getName(), bankAccount.name());
+        //Validations if exists in services
+        IdNameEntitiesAuxiliary idNameClient = clientService.getIdNameClient(clientId);
+        IdNameEntitiesAuxiliary idNameBankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
+        return new SaleAuxiliary(idNameClient, idNameBankAccount);
     }
 
-    private SaleGetDTO saveAndReturn(Sale sale, SaleAuxiliary auxiliary) {
-        sale.setClientName(auxiliary.clientName());
-        sale.setBankAccountName(auxiliary.bankAccountName());
+    private SaleGetDTO saveAndReturn(Sale sale, SaleAuxiliary saleAuxiliary) {
+        sale.setClientName(saleAuxiliary.clientInfo().name());
+        sale.setBankAccountName(saleAuxiliary.bankAccountInfo().name());
         sale = saleRepository.save(sale);
         return saleMapper.saleToSaleGetDTO(sale);
     }

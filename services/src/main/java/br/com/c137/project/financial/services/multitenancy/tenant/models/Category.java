@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static br.com.c137.project.financial.services.utils.ServiceUtils.getUserIdFromToken;
+
 @Entity
 @Table(name = "categories")
 @AllArgsConstructor
@@ -38,5 +40,6 @@ public class Category {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.entityStatus = EntityStatus.ACTIVE;
+        this.createdBy = getUserIdFromToken();
     }
 }

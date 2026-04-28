@@ -45,4 +45,6 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, UUID> 
     @Query("UPDATE BankAccount bc SET bc.entityStatus = :entityStatus WHERE bc.id = :id")
     void updateEntityStatus(EntityStatus entityStatus, UUID id);
 
+    @Query("SELECT bc.name FROM BankAccount bc WHERE bc.id = :bankAccountId")
+    String getBankAccountName(UUID bankAccountId);
 }

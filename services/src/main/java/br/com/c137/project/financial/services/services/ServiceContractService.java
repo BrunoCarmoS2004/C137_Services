@@ -2,15 +2,14 @@ package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
 import br.com.c137.project.financial.services.mappers.ServiceContractMapper;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.ServiceContractAuxiliary;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.IdNameBankAccountGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.servicecontract.ServiceContractAuxiliary;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.servicecontract.ServiceContractGetDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.servicecontract.ServiceContractItemPostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.servicecontract.ServiceContractPostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.servicecontract.ServiceContractItemPutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.servicecontract.ServiceContractPutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.basic.Client;
 import br.com.c137.project.financial.services.multitenancy.tenant.models.servicecontract.ServiceContract;
 import br.com.c137.project.financial.services.multitenancy.tenant.repositories.servicecontract.ServiceContractRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
@@ -69,7 +68,7 @@ public class ServiceContractService {
     @CacheEvict(value = "servicecontracts", allEntries = true)
     public ServiceContractGetDTO postServiceContract(ServiceContractPostDTO serviceContractPostDTO) {
         Set<UUID> allItemsIds = serviceContractPostDTO.serviceContractItems().stream().map(ServiceContractItemPostDTO::serviceProductId).collect(Collectors.toSet());
-        ServiceContractAuxiliary validations = commonValidations(serviceContractPostDTO.clientId(), serviceContractPostDTO.bankAccountId(), allItemsIds);
+        ServiceContractAuxiliary validations = resolveSaleDependencies(serviceContractPostDTO.clientId(), serviceContractPostDTO.bankAccountId(), allItemsIds);
         ServiceContract serviceContract = serviceContractMapper.postToServiceContract(serviceContractPostDTO);
         return saveAndReturn(serviceContract, validations);
     }
@@ -81,7 +80,7 @@ public class ServiceContractService {
     public ServiceContractGetDTO putServiceContract(UUID id, ServiceContractPutDTO serviceContractPutDTO) {
         serviceContractExistsValidation(id);
         Set<UUID> allItemsIds = serviceContractPutDTO.serviceContractItems().stream().map(ServiceContractItemPutDTO::serviceProductId).collect(Collectors.toSet());
-        ServiceContractAuxiliary validations = commonValidations(serviceContractPutDTO.clientId(), serviceContractPutDTO.bankAccountId(), allItemsIds);
+        ServiceContractAuxiliary validations = resolveSaleDependencies(serviceContractPutDTO.clientId(), serviceContractPutDTO.bankAccountId(), allItemsIds);
         ServiceContract serviceContract = serviceContractRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
         serviceContract = serviceContractMapper.putToServiceContract(serviceContractPutDTO, serviceContract);
         return saveAndReturn(serviceContract, validations);
@@ -117,19 +116,17 @@ public class ServiceContractService {
         return messageUtils.getMessage("service.contract.not-found");
     }
 
-    private ServiceContractAuxiliary commonValidations(UUID clientId, UUID bankAccountId, Set<UUID> itemIds) {
-        clientService.clientExistsValidation(clientId);
-        bankAccountService.bankAccountExistsValidation(bankAccountId);
+    private ServiceContractAuxiliary resolveSaleDependencies(UUID clientId, UUID bankAccountId, Set<UUID> itemIds) {
         serviceProductService.serviceProductExistsByIdsValidation(itemIds);
-
-        Client client = clientService.getClientById(clientId);
-        IdNameBankAccountGetDTO bankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
-        return new ServiceContractAuxiliary(client.getName(), bankAccount.name());
+        //Validations if exists in services
+        IdNameEntitiesAuxiliary idNameClient = clientService.getIdNameClient(clientId);
+        IdNameEntitiesAuxiliary idNameBankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
+        return new ServiceContractAuxiliary(idNameClient, idNameBankAccount);
     }
 
-    private ServiceContractGetDTO saveAndReturn(ServiceContract serviceContract, ServiceContractAuxiliary auxiliary) {
-        serviceContract.setClientName(auxiliary.clientName());
-        serviceContract.setBankAccountName(auxiliary.bankAccountName());
+    private ServiceContractGetDTO saveAndReturn(ServiceContract serviceContract, ServiceContractAuxiliary serviceContractAuxiliary) {
+        serviceContract.setClientName(serviceContractAuxiliary.clientInfo().name());
+        serviceContract.setBankAccountName(serviceContractAuxiliary.bankAccountInfo().name());
         serviceContract = serviceContractRepository.save(serviceContract);
         return serviceContractMapper.serviceContractToServiceContractGetDTO(serviceContract);
     }

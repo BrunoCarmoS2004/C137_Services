@@ -1,10 +1,10 @@
 package br.com.c137.project.financial.services.controllers;
 
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.PaymentGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.PaymentPostDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.PaymentPutDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.ReceiptGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.ReceiptPostDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.ReceiptPutDTO;
 import br.com.c137.project.financial.services.responses.ResponsePayload;
-import br.com.c137.project.financial.services.services.PaymentService;
+import br.com.c137.project.financial.services.services.ReceiptService;
 import br.com.c137.project.financial.services.utils.MessageUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,62 +21,62 @@ import java.util.UUID;
 import static br.com.c137.project.financial.services.utils.ServiceUtils.createResponse;
 
 @RestController
-@RequestMapping("/payment")
-public class PaymentController {
+@RequestMapping("/receipt")
+public class ReceiptController {
     @Autowired
-    private PaymentService paymentService;
+    private ReceiptService receiptService;
 
     @Autowired
     private MessageUtils messageUtils;
 
     @GetMapping
-    public ResponseEntity<PagedModel<PaymentGetDTO>> getAll(@PageableDefault(sort = {"createdAt"}, direction = Sort.Direction.DESC)
+    public ResponseEntity<PagedModel<ReceiptGetDTO>> getAll(@PageableDefault(sort = {"createdAt"}, direction = Sort.Direction.DESC)
                                                          Pageable pageable) {
-        return ResponseEntity.ok(paymentService.getAll(pageable));
+        return ResponseEntity.ok(receiptService.getAll(pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponsePayload<PaymentGetDTO>> getPaymentById(@PathVariable UUID id) {
-        PaymentGetDTO paymentGetDTO = paymentService.getPaymentById(id);
+    public ResponseEntity<ResponsePayload<ReceiptGetDTO>> getReceiptById(@PathVariable UUID id) {
+        ReceiptGetDTO receiptGetDTO = receiptService.getReceiptById(id);
         return createResponse(
                 HttpStatus.OK,
-                paymentGetDTO.id(),
-                paymentGetDTO,
-                messageUtils.getMessage("payment.found")
+                receiptGetDTO.id(),
+                receiptGetDTO,
+                messageUtils.getMessage("receipt.found")
         );
     }
 
     @PostMapping
-    public ResponseEntity<ResponsePayload<PaymentGetDTO>> postPayment(@Valid @RequestBody PaymentPostDTO paymentPostDTO) {
-        PaymentGetDTO paymentGetDTO = paymentService.postPayment(paymentPostDTO);
+    public ResponseEntity<ResponsePayload<ReceiptGetDTO>> postReceipt(@Valid @RequestBody ReceiptPostDTO receiptPostDTO) {
+        ReceiptGetDTO receiptGetDTO = receiptService.postReceipt(receiptPostDTO);
         return createResponse(
                 HttpStatus.CREATED,
-                paymentGetDTO.id(),
-                paymentGetDTO,
-                messageUtils.getMessage("payment.created")
+                receiptGetDTO.id(),
+                receiptGetDTO,
+                messageUtils.getMessage("receipt.created")
         );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponsePayload<PaymentGetDTO>> putPayment(@PathVariable UUID id, @Valid @RequestBody PaymentPutDTO paymentPutDTO) {
-        PaymentGetDTO paymentGetDTO = paymentService.putPayment(id, paymentPutDTO);
+    public ResponseEntity<ResponsePayload<ReceiptGetDTO>> putReceipt(@PathVariable UUID id, @Valid @RequestBody ReceiptPutDTO receiptPutDTO) {
+        ReceiptGetDTO receiptGetDTO = receiptService.putReceipt(id, receiptPutDTO);
         return createResponse(
                 HttpStatus.OK,
-                paymentGetDTO.id(),
-                paymentGetDTO,
-                messageUtils.getMessage("payment.updated")
+                receiptGetDTO.id(),
+                receiptGetDTO,
+                messageUtils.getMessage("receipt.updated")
         );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePayment(@PathVariable UUID id) {
-        paymentService.deletePayment(id);
+    public ResponseEntity<Void> deleteReceipt(@PathVariable UUID id) {
+        receiptService.deleteReceipt(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> inactivePayment(@PathVariable UUID id) {
-        paymentService.inactivePayment(id);
+    public ResponseEntity<Void> inactiveReceipt(@PathVariable UUID id) {
+        receiptService.inactiveReceipt(id);
         return ResponseEntity.noContent().build();
     }
 }

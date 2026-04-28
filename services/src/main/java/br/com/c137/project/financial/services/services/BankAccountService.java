@@ -2,34 +2,25 @@ package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
 import br.com.c137.project.financial.services.mappers.BankAccountMapper;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.BankAccountGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.IdNameBankAccountGetDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.BankAccountPostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.BankAccountPutDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.enums.Bank;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
 import br.com.c137.project.financial.services.multitenancy.tenant.models.BankAccount;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.basic.Client;
 import br.com.c137.project.financial.services.multitenancy.tenant.repositories.BankAccountRepository;
-import br.com.c137.project.financial.services.responses.ResponsePayload;
 import br.com.c137.project.financial.services.utils.MessageUtils;
 import br.com.c137.project.financial.services.validations.BankAccountValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
-
-import static br.com.c137.project.financial.services.utils.ServiceUtils.createResponse;
 
 @Service
 public class BankAccountService {
@@ -107,8 +98,8 @@ public class BankAccountService {
         bankAccountValidation.bankAccountExistsValidation(id);
     }
 
-    protected IdNameBankAccountGetDTO getIdNameBankAccount(UUID id){
-        return bankAccountRepository.findById(id, IdNameBankAccountGetDTO.class).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
+    protected IdNameEntitiesAuxiliary getIdNameBankAccount(UUID id){
+        return bankAccountRepository.findById(id, IdNameEntitiesAuxiliary.class).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
     }
 
     protected void updateEntityStatus(EntityStatus entityStatus, UUID id) {
@@ -119,4 +110,7 @@ public class BankAccountService {
         return messageUtils.getMessage("bank.account.not-found");
     }
 
+    public String getBankAccountName(UUID bankAccountId) {
+        return bankAccountRepository.getBankAccountName(bankAccountId);
+    }
 }

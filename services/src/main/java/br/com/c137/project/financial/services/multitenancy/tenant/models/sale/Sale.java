@@ -115,16 +115,21 @@ public class Sale {
         this.createdAt = LocalDateTime.now();
         this.entityStatus = EntityStatus.ACTIVE;
         this.createdBy = getUserIdFromToken();
-
         this.installmentCount = this.installments.size();
+        initTotals();
+        calculateTotals();
+    }
 
+    private void initTotals() {
         this.totalSaleGrossAmount = BigDecimal.ZERO;
         this.totalServicesInvoicingAmount = BigDecimal.ZERO;
         this.totalServicesInvoicingDiscountAmount = BigDecimal.ZERO;
         this.totalServicesCancelledAmount = BigDecimal.ZERO;
         this.totalServicesFreeAmount = BigDecimal.ZERO;
         this.totalSaleNetAmount = BigDecimal.ZERO;
+    }
 
+    private void calculateTotals() {
         for (SaleItem item : saleItems) {
             BigDecimal gross = item.calculateTotalWithoutDiscount();
             BigDecimal discount = item.getDiscount();

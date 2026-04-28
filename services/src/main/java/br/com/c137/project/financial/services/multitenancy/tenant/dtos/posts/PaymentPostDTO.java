@@ -17,8 +17,10 @@ public record PaymentPostDTO(
         @Size(max = 255, message = "Description must not exceed 255 characters")
         String description,
 
-        @NotNull(message = "Category is required")
-        Category category,
+        UUID supplierId,
+
+        @NotNull(message = "Category Id is required")
+        UUID categoryId,
 
         @NotNull(message = "Payment status is required")
         TransactionStatus status,
@@ -61,9 +63,6 @@ public record PaymentPostDTO(
         String documentNumber,
 
         @Size(max = 1000, message = "Observation is too long")
-        String observation,
-
-        @NotNull(message = "Supplier ID is required")
-        UUID supplierId
+        String observation
 ) {
 }

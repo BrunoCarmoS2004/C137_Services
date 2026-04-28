@@ -12,20 +12,23 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public record ReceiptPutDTO(
         @NotBlank(message = "Description is required")
         @Size(max = 255, message = "Description must not exceed 255 characters")
         String description,
 
-        @NotNull(message = "Category is required")
-        Category category,
+        UUID clientId,
+
+        @NotNull(message = "Category Id is required")
+        UUID categoryId,
 
         @NotNull(message = "Transaction status is required")
         TransactionStatus status,
 
-        @NotNull(message = "Bank account is required")
-        BankAccount bankAccount,
+        @NotNull(message = "Bank account Id is required")
+        UUID bankAccountId,
 
         @NotNull(message = "Amount is required")
         @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
@@ -51,9 +54,6 @@ public record ReceiptPutDTO(
 
         @NotNull(message = "Payment type is required")
         PaymentType paymentType,
-
-        @NotNull(message = "Client is required")
-        Client client,
 
         @NotNull(message = "Accrual date (competence) is required")
         LocalDate accrualDate,

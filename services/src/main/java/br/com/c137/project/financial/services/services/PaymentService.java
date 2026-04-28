@@ -1,122 +1,140 @@
 package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
-import br.com.c137.project.financial.services.mappers.BankAccountMapper;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.BankAccountGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.IdNameBankAccountGetDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.BankAccountPostDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.BankAccountPutDTO;
-import br.com.c137.project.financial.services.multitenancy.tenant.enums.Bank;
+import br.com.c137.project.financial.services.mappers.PaymentMapper;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.payment.PaymentAuxiliary;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.PaymentGetDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.PaymentPostDTO;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.PaymentPutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.BankAccount;
-import br.com.c137.project.financial.services.multitenancy.tenant.models.basic.Client;
-import br.com.c137.project.financial.services.multitenancy.tenant.repositories.BankAccountRepository;
-import br.com.c137.project.financial.services.responses.ResponsePayload;
+import br.com.c137.project.financial.services.multitenancy.tenant.models.Payment;
+import br.com.c137.project.financial.services.multitenancy.tenant.repositories.PaymentRepository;
 import br.com.c137.project.financial.services.utils.MessageUtils;
-import br.com.c137.project.financial.services.validations.BankAccountValidation;
+import br.com.c137.project.financial.services.validations.PaymentValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import static br.com.c137.project.financial.services.utils.ServiceUtils.createResponse;
-
 @Service
-public class BankAccountService {
+public class PaymentService {
     @Autowired
-    private BankAccountRepository bankAccountRepository;
+    private PaymentRepository paymentRepository;
+
     @Autowired
-    private BankAccountValidation bankAccountValidation;
+    private PaymentValidation paymentValidation;
+
     @Autowired
-    private BankAccountMapper bankAccountMapper;
+    private PaymentMapper paymentMapper;
+
     @Autowired
     private MessageUtils messageUtils;
 
-    @Cacheable(value = "bankaccounts", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
-    public PagedModel<BankAccountGetDTO> getAll(Pageable pageable) {
-        Page<BankAccountGetDTO> bankAccounts = bankAccountRepository.findAllBy(pageable, BankAccountGetDTO.class);
-        return new PagedModel<>(bankAccounts);
+    @Autowired
+    private BankAccountService bankAccountService;
+
+    @Autowired
+    private CategoryService categoryService;
+
+    @Autowired
+    private SupplierService supplierService;
+
+    @Cacheable(value = "payments", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
+    public PagedModel<PaymentGetDTO> getAll(Pageable pageable) {
+        Page<PaymentGetDTO> payments = paymentRepository.findAllBy(pageable, PaymentGetDTO.class);
+        return new PagedModel<>(payments);
     }
 
-    @Cacheable(value = "bankaccount", key = "#id")
-    public BankAccountGetDTO getBankAccountById(UUID id) {
-        return bankAccountRepository.findById(id, BankAccountGetDTO.class).orElseThrow(
+    @Cacheable(value = "payment", key = "#id")
+    public PaymentGetDTO getPaymentById(UUID id) {
+        return paymentRepository.findById(id, PaymentGetDTO.class).orElseThrow(
                 () -> new NotFoundException(getNotFoundMessage()));
     }
 
-    @CacheEvict(value = "bankaccounts", allEntries = true)
-    public BankAccountGetDTO postBankAccount(BankAccountPostDTO bankAccountPostDTO) {
-        bankAccountValidation.bankAndBranchNumberAndAccountNumberAndAccountDigitExistsValidation(
-                bankAccountPostDTO.bank(),
-                bankAccountPostDTO.branchNumber(),
-                bankAccountPostDTO.accountNumber(),
-                bankAccountPostDTO.accountDigit());
-        bankAccountValidation.pixKeyExistsValidation(bankAccountPostDTO.pixKey());
-        BankAccount bankAccount = bankAccountMapper.postToBankAccount(bankAccountPostDTO);
-        bankAccount = bankAccountRepository.save(bankAccount);
-        return bankAccountMapper.bankAccountToBankAccountGetDTO(bankAccount);
+    @CacheEvict(value = "payments", allEntries = true)
+    public PaymentGetDTO postPayment(PaymentPostDTO paymentPostDTO) {
+        PaymentAuxiliary paymentAuxiliary = resolvePaymentDependencies(
+                paymentPostDTO.categoryId(),
+                paymentPostDTO.bankAccountId(),
+                paymentPostDTO.supplierId()
+        );
+        Payment payment = paymentMapper.postToPayment(paymentPostDTO);
+        return saveAndReturn(payment, paymentAuxiliary);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "bankaccounts", allEntries = true),
-            @CacheEvict(value = "bankaccount", key = "#id")
+            @CacheEvict(value = "payments", allEntries = true),
+            @CacheEvict(value = "payment", key = "#id")
     })
-    public BankAccountGetDTO putBankAccount(UUID id, BankAccountPutDTO bankAccountPutDTO) {
-        bankAccountValidation.bankAndBranchNumberAndAccountNumberAndAccountDigitExistsInOtherIdValidation(
-                bankAccountPutDTO.bank(),
-                bankAccountPutDTO.branchNumber(),
-                bankAccountPutDTO.accountNumber(),
-                bankAccountPutDTO.accountDigit(),
-                id);
-        bankAccountValidation.pixKeyExistsInOtherIdValidation(bankAccountPutDTO.pixKey(), id);
-        BankAccount bankAccount = bankAccountRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
-        bankAccount =  bankAccountMapper.putToBankAccount(bankAccountPutDTO, bankAccount);
-        bankAccount = bankAccountRepository.save(bankAccount);
-        return bankAccountMapper.bankAccountToBankAccountGetDTO(bankAccount);
+    public PaymentGetDTO putPayment(UUID id, PaymentPutDTO paymentPutDTO) {
+        PaymentAuxiliary paymentAuxiliary = resolvePaymentDependencies(
+                paymentPutDTO.categoryId(),
+                paymentPutDTO.bankAccountId(),
+                paymentPutDTO.supplierId()
+        );
+        Payment payment = paymentRepository.findById(id).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
+        payment = paymentMapper.putToPayment(paymentPutDTO, payment);
+        return saveAndReturn(payment, paymentAuxiliary);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "bankaccounts", allEntries = true),
-            @CacheEvict(value = "bankaccount", key = "#id")
+            @CacheEvict(value = "payments", allEntries = true),
+            @CacheEvict(value = "payment", key = "#id")
     })
-    public void deleteBankAccount(UUID id) {
-        bankAccountExistsValidation(id);
+    public void deletePayment(UUID id) {
+        paymentExistsValidation(id);
         updateEntityStatus(EntityStatus.DELETED, id);
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "bankaccounts", allEntries = true),
-            @CacheEvict(value = "bankaccount", key = "#id")
+            @CacheEvict(value = "payments", allEntries = true),
+            @CacheEvict(value = "payment", key = "#id")
     })
-    public void inactiveBankAccount(UUID id) {
-        bankAccountExistsValidation(id);
+    public void inactivePayment(UUID id) {
+        paymentExistsValidation(id);
         updateEntityStatus(EntityStatus.INACTIVE, id);
     }
 
-    protected void bankAccountExistsValidation(UUID id){
-        bankAccountValidation.bankAccountExistsValidation(id);
+    protected void paymentExistsValidation(UUID id) {
+        paymentValidation.paymentExistsValidation(id);
     }
 
-    protected IdNameBankAccountGetDTO getIdNameBankAccount(UUID id){
-        return bankAccountRepository.findById(id, IdNameBankAccountGetDTO.class).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
-    }
 
     protected void updateEntityStatus(EntityStatus entityStatus, UUID id) {
-        bankAccountRepository.updateEntityStatus(entityStatus, id);
+        paymentRepository.updateEntityStatus(entityStatus, id);
     }
 
-    private String getNotFoundMessage(){
-        return messageUtils.getMessage("bank.account.not-found");
+    private String getNotFoundMessage() {
+        return messageUtils.getMessage("payment.not-found");
     }
 
+    private PaymentAuxiliary resolvePaymentDependencies(
+            UUID categoryId,
+            UUID bankAccountId,
+            UUID supplierId
+    ) {
+        //Validations if exists in services
+        IdNameEntitiesAuxiliary idNameCategory = categoryService.getIdNameCategory(categoryId);
+        IdNameEntitiesAuxiliary idNameBankAccount = bankAccountService.getIdNameBankAccount(bankAccountId);
+        IdNameEntitiesAuxiliary idNameSupplier =
+                supplierId != null
+                ? supplierService.getIdNameSupplier(supplierId) : new IdNameEntitiesAuxiliary(null, null);
+        //SUPPLIER, BANK ACCOUNT, CATEGORY
+        return new PaymentAuxiliary(idNameSupplier, idNameBankAccount, idNameCategory);
+    }
+
+    private PaymentGetDTO saveAndReturn(Payment payment, PaymentAuxiliary paymentAuxiliary) {
+        payment.setSupplierName(paymentAuxiliary.supplierInfo().name());
+        payment.setBankAccountName(paymentAuxiliary.bankAccountInfo().name());
+        payment.setCategoryName(paymentAuxiliary.categoryInfo().name());
+        payment = paymentRepository.save(payment);
+        return paymentMapper.paymentToPaymentGetDTO(payment);
+    }
 }

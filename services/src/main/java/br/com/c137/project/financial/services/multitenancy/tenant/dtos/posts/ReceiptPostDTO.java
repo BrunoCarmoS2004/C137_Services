@@ -14,8 +14,10 @@ public record ReceiptPostDTO(
         @Size(max = 255, message = "Description must not exceed 255 characters")
         String description,
 
-        @NotNull(message = "Category is required")
-        Category category,
+        UUID clientId,
+
+        @NotNull(message = "Category Id is required")
+        UUID categoryId,
 
         @NotNull(message = "Transaction status is required")
         TransactionStatus status,
@@ -47,9 +49,6 @@ public record ReceiptPostDTO(
 
         @NotNull(message = "Payment type is required")
         PaymentType paymentType,
-
-        @NotNull(message = "Client  id is required")
-        UUID clientId,
 
         @NotNull(message = "Accrual date (competence) is required")
         LocalDate accrualDate,

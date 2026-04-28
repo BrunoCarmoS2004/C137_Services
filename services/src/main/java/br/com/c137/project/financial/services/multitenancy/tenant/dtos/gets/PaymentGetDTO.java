@@ -12,9 +12,15 @@ import java.util.UUID;
 public record PaymentGetDTO(
         UUID id,
 
+        UUID supplierId,
+
+        String supplierName,
+
         String description,
 
-        Category category,
+        UUID categoryId,
+
+        String categoryName,
 
         TransactionStatus transactionStatus,
 
@@ -45,10 +51,6 @@ public record PaymentGetDTO(
         String documentNumber,
 
         String observation,
-
-        UUID supplierId,
-
-        String supplierName,
 
         EntityStatus entityStatus
 ) {

@@ -157,14 +157,20 @@ public class ServiceContract {
         this.createdAt = LocalDateTime.now();
         this.entityStatus = EntityStatus.ACTIVE;
         this.createdBy = getUserIdFromToken();
+        initTotals();
+        calculateTotals();
+    }
 
+    private void initTotals(){
         this.totalContractGrossAmount = BigDecimal.ZERO;
         this.totalServicesInvoicingAmount = BigDecimal.ZERO;
         this.totalServicesInvoicingDiscountAmount = BigDecimal.ZERO;
         this.totalServicesCancelledAmount = BigDecimal.ZERO;
         this.totalServicesFreeAmount = BigDecimal.ZERO;
         this.totalContractNetAmount = BigDecimal.ZERO;
+    }
 
+    private void calculateTotals(){
         for (ServiceContractItem item : serviceContractItems) {
             BigDecimal gross = item.calculateTotalWithoutDiscount();
             BigDecimal discount = item.getDiscount();

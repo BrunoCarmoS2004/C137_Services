@@ -1,6 +1,7 @@
 package br.com.c137.project.financial.services.multitenancy.tenant.config;
 
 import br.com.c137.project.financial.services.exceptions.TenantSchemaNotReadyException;
+import br.com.c137.project.financial.services.exceptions.UnauthorizedException;
 import br.com.c137.project.financial.services.multitenancy.mastertenant.config.DataSourceUtil;
 import br.com.c137.project.financial.services.multitenancy.mastertenant.enums.DatabaseStatus;
 import br.com.c137.project.financial.services.multitenancy.mastertenant.models.UserTenant;
@@ -70,13 +71,17 @@ public class DataSourceBasedMultiTenantConnectionProviderImpl
             String tenant = (String) key;
             UUID dbUserId = UUID.fromString(tenant.replace(NOMEBANCO, ""));
 
-            UserTenant novoTenant = userTenantRepository.findByDbUserId(dbUserId);
+            UserTenant newTenant = userTenantRepository.findByDbUserId(dbUserId);
 
-            if (novoTenant.getDatabaseStatus().equals(DatabaseStatus.NOT_CREATED)) {
+            if (newTenant == null) {
+                throw new UnauthorizedException("Invalid token");
+            }
+
+            if (newTenant.getDatabaseStatus().equals(DatabaseStatus.NOT_CREATED)) {
                 throw new TenantSchemaNotReadyException("Database not ready for tenant: " + tenant);
             }
 
-            return DataSourceUtil.createAndConfigureDataSource(novoTenant);
+            return DataSourceUtil.createAndConfigureDataSource(newTenant);
         });
     }
 }

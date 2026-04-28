@@ -2,13 +2,13 @@ package br.com.c137.project.financial.services.services;
 
 import br.com.c137.project.financial.services.exceptions.NotFoundException;
 import br.com.c137.project.financial.services.mappers.CategoryMapper;
+import br.com.c137.project.financial.services.multitenancy.tenant.dtos.auxiliaries.IdNameEntitiesAuxiliary;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.gets.CategoryGetDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.posts.CategoryPostDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.dtos.puts.CategoryPutDTO;
 import br.com.c137.project.financial.services.multitenancy.tenant.enums.EntityStatus;
 import br.com.c137.project.financial.services.multitenancy.tenant.models.Category;
 import br.com.c137.project.financial.services.multitenancy.tenant.repositories.CategoryRepository;
-import br.com.c137.project.financial.services.responses.ResponsePayload;
 import br.com.c137.project.financial.services.utils.MessageUtils;
 import br.com.c137.project.financial.services.validations.CategoryValidation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +18,9 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
-
-import static br.com.c137.project.financial.services.utils.ServiceUtils.createResponse;
 
 @Service
 public class CategoryService {
@@ -100,5 +96,9 @@ public class CategoryService {
 
     private String getNotFoundMessage(){
         return messageUtils.getMessage("category.not-found");
+    }
+
+    protected IdNameEntitiesAuxiliary getIdNameCategory(UUID id){
+        return categoryRepository.findById(id, IdNameEntitiesAuxiliary.class).orElseThrow(() -> new NotFoundException(getNotFoundMessage()));
     }
 }
